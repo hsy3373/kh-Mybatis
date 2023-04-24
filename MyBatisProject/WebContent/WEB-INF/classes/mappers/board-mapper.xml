@@ -6,5 +6,25 @@
 
 <mapper namespace="boardMapper">
 <!-- namespace : 해당 mapper파일의 고유한 별칭 (관리할 파일이 많아지면 패키지경로처럼 경로까지 포함해서 작성가능) -->
+	
+<!-- 
+	resultMap type 이 board인 하나 생성하고
+	
+	select id 값이 selectListCount, selectList 태그 2개 만들기
+ -->
+	
+	<select id="selectListCount" resultType="int" >
+		SELECT COUNT(*) AS COUNT FROM BOARD 
+		WHERE STATUS = 'Y'
+	</select>
+	
+	<select id="selectList" resultType="board">
+		SELECT * FROM BOARD 
+		WHERE STATUS = 'Y'
+		ORDER BY BOARD_NO 
+	</select>
+
+	
+
 
 </mapper>

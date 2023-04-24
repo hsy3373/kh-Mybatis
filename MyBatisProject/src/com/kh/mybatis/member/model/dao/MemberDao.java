@@ -19,6 +19,12 @@ public class MemberDao {
 	
 	public int insertMember(SqlSession sqlSession, Member m) {
 		
+		
+		/*
+		 * sqlSession.sql문 종류에 맞는 메소드("메퍼파일의 namespace.해당sql문안의 고유한 id", sql문을 완성시켜줄 객체)
+		 * 
+		 * */
+		
 		return sqlSession.insert( "memberMapper.insertMember" , m);
 		
 	}
