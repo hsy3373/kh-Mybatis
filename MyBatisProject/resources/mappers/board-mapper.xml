@@ -12,19 +12,133 @@
 	
 	select id 값이 selectListCount, selectList 태그 2개 만들기
  -->
+ 
+ 
+ <resultMap type="board" id="boardResultSet">
+ 	<!-- result태그로 해도 되는데 id라고 해주는 것은 pk값인 컬럼이라는 걸 표시해주려고 쓰는 것임 안써도 됨 -->
+ 	<id column="BOARD_NO" property="boardNo"/>
+ 	<result column="BOARD_WRITER" property="boardWriter"/>
+ 	<result column="USER_NAME" property="boardWriter"/>
+  	<result column="BOARD_DATE" property="createDate"/> 
+  	<result column="CREATE_DATE" property="createDate"/> 
+  	<result column="BOARD_TITLE" property="boardTitle"/>
+  	<result column="BOARD_CONTENT" property="boardContent"/>
+  	<result column="COUNT" property="count"/>
+ 	<collection property="replyList" resultMap="replyResultSet" />
+ </resultMap>
+ 
+ 
+<resultMap type="reply" id="replyResultSet">
+ 	<result column="USER_NAME" property="replyWriter"/>
+ 	<result column="REPLY_DATE" property="createDate"/> 
+ 	 <result column="CREATE_DATE" property="createDate"/> 
+ 	<result column="REPLY_NO" property="replyNo"/> 
+ 	<result column="REPLY_CONTENT" property="replyContent"/> 
+</resultMap>
 	
 	<select id="selectListCount" resultType="int" >
 		SELECT COUNT(*) AS COUNT FROM BOARD 
 		WHERE STATUS = 'Y'
 	</select>
 	
-	<select id="selectList" resultType="board">
-		SELECT * FROM BOARD 
-		WHERE STATUS = 'Y'
-		ORDER BY BOARD_NO 
+	<select id="selectList" resultMap="boardResultSet">
+		SELECT B.*, M.USER_NAME  
+		FROM BOARD B
+		JOIN MEMBER M ON (BOARD_WRITER = USER_NO)
+		WHERE B.STATUS = 'Y'
+		ORDER BY BOARD_NO DESC 
 	</select>
 
+	<select id="selectBoard" parameterType="_int" resultMap="boardResultSet">
+		SELECT BOARD_NO,
+                BOARD_TITLE,
+                BOARD_CONTENT,
+                BOARD_WRITER,
+                COUNT,
+                B.CREATE_DATE AS BOARD_DATE,
+                RL.*
+		FROM BOARD B
+		JOIN MEMBER ON (BOARD_WRITER = USER_NO)
+		LEFT JOIN (
+                    SELECT REPLY_NO,
+                            REPLY_CONTENT,
+                            REF_BNO,
+                            USER_NAME,
+                            CREATE_DATE AS REPLY_DATE
+                    FROM REPLY R
+                    JOIN MEMBER ON (REPLY_WRITER = USER_NO)
+                    WHERE REF_BNO = #{bno}
+                        AND R.STATUS = 'Y'
+                    ORDER BY CREATE_DATE DESC
+                    ) RL ON (BOARD_NO = REF_BNO)
+		WHERE BOARD_NO = #{bno}
+			AND B.STATUS = 'Y'
+	</select>
 	
+	<select id="selectReplyList" resultMap="replyResultSet" parameterType="_int">
+		 SELECT REPLY_NO,
+	             REPLY_CONTENT,
+	             REF_BNO,
+	             USER_NAME,
+	             CREATE_DATE 
+	     FROM REPLY R
+	     JOIN MEMBER ON (REPLY_WRITER = USER_NO)
+	     WHERE REF_BNO = #{bno}
+	         AND R.STATUS = 'Y'
+	     ORDER BY CREATE_DATE DESC
+	</select>
+	<!-- _int 는 마이바티스용 int 자료형의 별칭임, 그냥 int사용해도 상관은 없는데 _붙인게 많이 쓰임 -->
+	<update id="increaseCount" parameterType="_int">
+		UPDATE BOARD
+		SET COUNT = COUNT + 1
+		WHERE BOARD_NO = #{bno} 
+			AND STATUS = 'Y'
+	</update>
 
+
+	<select id="selectSearchCount" parameterType="hashmap"  resultType="_int">
+		SELECT COUNT(*) AS COUNT
+		FROM BOARD B
+		JOIN MEMBER M ON (BOARD_WRITER = USER_NO)
+		WHERE B.STATUS = 'Y'
+		<choose>
+			<when test='condition.equals("writer") '>
+				AND USER_NAME LIKE #{keyword} ESCAPE '\'
+			</when>
+			<when test='condition.equals("title")'>
+				AND BOARD_TITLE LIKE #{keyword} ESCAPE '\'
+			</when>
+			<when test='condition.equals("content")'>
+				AND BOARD_CONTENT LIKE #{keyword} ESCAPE '\'
+			</when>
+		</choose>
+	
+	</select>
+	
+	<!-- ${} 로 입력하면 '' 없이 그냥 값만 sql구문에 포함됨 - 위험성때문에 사용을 권장하지 않음 -->
+	
+	<select id="selectSearchList"  parameterType="hashmap"  resultMap="boardResultSet">
+		SELECT BOARD_NO,
+               BOARD_TITLE,
+               BOARD_CONTENT,
+               USER_NAME,
+               COUNT,
+               B.CREATE_DATE AS BOARD_DATE
+		FROM BOARD B
+		JOIN MEMBER M ON (BOARD_WRITER = USER_NO)
+		WHERE B.STATUS = 'Y'
+		<choose>
+			<when test='condition.equals("writer") '>
+				AND USER_NAME LIKE #{keyword} ESCAPE '\'
+			</when>
+			<when test='condition.equals("title")'>
+				AND BOARD_TITLE LIKE #{keyword} ESCAPE '\'
+			</when>
+			<when test='condition.equals("content")'>
+				AND BOARD_CONTENT LIKE #{keyword} ESCAPE '\'
+			</when>
+		</choose>
+		ORDER BY BOARD_NO DESC 
+	</select>
 
 </mapper>

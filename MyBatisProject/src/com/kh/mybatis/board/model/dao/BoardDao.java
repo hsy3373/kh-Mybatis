@@ -1,11 +1,15 @@
 package com.kh.mybatis.board.model.dao;
 
+import static com.kh.mybatis.common.template.Template.getSqlSession;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import org.apache.ibatis.session.RowBounds;
 import org.apache.ibatis.session.SqlSession;
 
 import com.kh.mybatis.board.model.vo.Board;
+import com.kh.mybatis.board.model.vo.Reply;
 import com.kh.mybatis.common.model.vo.PageInfo;
 
 public class BoardDao {
@@ -42,4 +46,60 @@ public class BoardDao {
 		return (ArrayList) sqlSession.selectList("boardMapper.selectList", null , rowBounds);
 		
 	}
+	
+	
+	public Board selectBoard(SqlSession sqlSession, int bno) {
+		
+		return sqlSession.selectOne("boardMapper.selectBoard", bno );
+		
+	}
+	
+
+	public int increaseCount(SqlSession sqlSession, int bno) {
+		return sqlSession.update("boardMapper.increaseCount", bno);
+	}
+	
+	public ArrayList<Reply> selectReplyList(SqlSession sqlSession, int bno) {
+		return (ArrayList) sqlSession.selectList("boardMapper.selectReplyList", bno );
+	}
+	
+	public int selectSearchCount(SqlSession sqlSession, HashMap<String, String> map) {
+		
+		String keyword = map.get("keyword");
+		keyword = keyword.replaceAll("%", "\\%");
+		keyword = keyword.replaceAll("_", "\\_");
+		keyword = "%" + keyword + "%";
+		
+		map.put("keyword", keyword);
+		
+		return sqlSession.selectOne("boardMapper.selectSearchCount", map);
+	}
+	
+	public ArrayList<Board> selectSearchList(SqlSession sqlSession,  HashMap<String, String> map, PageInfo pi){
+		int limit = pi.getBoardLimit();
+		int offset = (pi.getCurrentPage()-1) * limit;
+		
+		RowBounds rowBounds = new RowBounds(offset, limit);
+		
+		String keyword = map.get("keyword");
+		keyword = keyword.replaceAll("%", "\\%");
+		keyword = keyword.replaceAll("_", "\\_");
+		keyword = "%" + keyword + "%";
+		
+		map.put("keyword", keyword);
+		
+		return (ArrayList) sqlSession.selectList("boardMapper.selectSearchList", map, rowBounds);
+	}
+	
 }
+
+
+
+
+
+
+
+
+
+
+
